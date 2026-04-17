@@ -17,3 +17,6 @@ ffmpeg-bin/
 AUDIT.md
 scripts/
 .vercel/
+my.md
+IMPLEMENTATION_PLAN.md
+.vercel-config/
