@@ -229,33 +229,20 @@ function formatDuration(sec) {
 
 async function loadFFmpeg() {
   if (!ffmpeg) {
-    progressMeta.innerText = "Loading FFmpeg Engine (~25MB)...";
     ffmpeg = new FFmpeg();
     ffmpeg.on('log', ({ message }) => console.log('[ffmpeg log]', message));
 
-    // [OOM-FIX] Use the multi-threaded core (core-mt) which leverages SharedArrayBuffer
-    // for a much larger WASM heap. Requires COOP/COEP headers (set in vercel.json).
-    // Falls back gracefully if SharedArrayBuffer is unavailable.
-    const useMT = typeof SharedArrayBuffer !== 'undefined';
-    const corePackage = useMT ? '@ffmpeg/core-mt@0.12.6' : '@ffmpeg/core@0.12.6';
-    const baseURL = `https://unpkg.com/${corePackage}/dist/esm`;
+    // Use single-threaded core for maximum compatibility across browsers.
+    // The MT core requires specific COEP/COOP + worker setup that is fragile in WASM.
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+    console.log('[FFmpeg] Loading single-threaded core (most compatible).');
+    progressMeta.innerText = "Loading FFmpeg Engine (~25MB)...";
 
-    console.log(`[FFmpeg] Loading ${useMT ? 'multi-threaded (SharedArrayBuffer)' : 'single-threaded'} core.`);
-    progressMeta.innerText = useMT
-      ? "Loading FFmpeg Engine (multi-threaded)..."
-      : "Loading FFmpeg Engine (single-threaded, COOP headers missing)...";
-
-    const loadConfig = {
+    await ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
       wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    };
-
-    // [OOM-FIX] The MT core needs its worker script too
-    if (useMT) {
-      loadConfig.workerURL = await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript');
-    }
-
-    await ffmpeg.load(loadConfig);
+    });
+    console.log('[FFmpeg] Engine loaded successfully.');
   }
 }
 
@@ -303,16 +290,15 @@ btnStart.addEventListener('click', async () => {
         
         const outPattern = `thumb_%06d.${format}`;
 
-        // [OOM-FIX] Apply a downscale filter for videos wider than WEB_MAX_WIDTH (1920px).
-        // Uses `-2` for height to keep it divisible by 2 (required by most codecs).
-        // `iw` = input width — the `min()` ensures we never upscale smaller videos.
+        // [OOM-FIX] Downscale videos wider than WEB_MAX_WIDTH to prevent memory blowout.
+        // IMPORTANT: No shell quotes in WASM — args are passed directly, not through a shell.
         const needsDownscale = videoWidth > WEB_MAX_WIDTH;
-        const scaleFilter = needsDownscale ? [`-vf`, `scale='min(${WEB_MAX_WIDTH},iw)':-2`] : [];
+        const scaleFilter = needsDownscale ? ['-vf', `scale=${WEB_MAX_WIDTH}:-2`] : [];
         if (needsDownscale) {
-          console.log(`[FFmpeg] Downscaling ${videoWidth}x${videoHeight} → max ${WEB_MAX_WIDTH}px wide to reduce memory usage.`);
-          progressMeta.innerText = `Processing video (downscaling ${videoWidth}px → ${WEB_MAX_WIDTH}px for memory)...`;
+          console.log(`[FFmpeg] Downscaling ${videoWidth}x${videoHeight} → ${WEB_MAX_WIDTH}px wide.`);
+          progressMeta.innerText = `Downscaling ${videoWidth}px → ${WEB_MAX_WIDTH}px...`;
         } else {
-          progressMeta.innerText = "Processing video geometry...";
+          progressMeta.innerText = "Processing video...";
         }
         
         const cmd = [
