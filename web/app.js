@@ -8,7 +8,12 @@ import 'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js';
 let ffmpeg = null;
 let currentFile = null;
 let videoDuration = 0;
+let videoWidth = 0;   // [OOM-FIX] Track source resolution for downscale decision
+let videoHeight = 0;  // [OOM-FIX] Track source resolution for downscale decision
 let isProcessing = false;
+
+// [OOM-FIX] Hard resolution cap for the free web version (1080p width)
+const WEB_MAX_WIDTH = 1920;
 
 // --- DOM Nodes ---
 const dropZone = document.getElementById('dropZone');
@@ -93,6 +98,8 @@ videoInput.addEventListener('change', (e) => {
 btnClearVideo.addEventListener('click', () => {
   currentFile = null;
   videoDuration = 0;
+  videoWidth = 0;   // [OOM-FIX] Reset dimensions on clear
+  videoHeight = 0;  // [OOM-FIX] Reset dimensions on clear
   videoCard.hidden = true;
   dropZone.style.display = 'flex';
   btnStart.disabled = true;
@@ -150,6 +157,10 @@ function handleFileSelected(file) {
   };
   
   v.onseeked = () => {
+    // [OOM-FIX] Store source resolution for downscale filter decision
+    videoWidth = v.videoWidth;
+    videoHeight = v.videoHeight;
+
     // Generate Canvas Thumb
     const canvas = document.createElement('canvas');
     canvas.width = v.videoWidth;
@@ -162,7 +173,14 @@ function handleFileSelected(file) {
     URL.revokeObjectURL(url);
     
     let sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    videoMeta.innerHTML = `<strong>${file.name}</strong><br/>${sizeMB} MB &nbsp;•&nbsp; ${v.videoWidth}x${v.videoHeight} &nbsp;•&nbsp; ${formatDuration(videoDuration)}`;
+
+    // [OOM-FIX] Warn user if their video exceeds the web cap and will be downscaled
+    const willDownscale = v.videoWidth > WEB_MAX_WIDTH;
+    const downscaleNote = willDownscale
+      ? ` &nbsp;•&nbsp; <span title="Video will be downscaled to ${WEB_MAX_WIDTH}px wide to fit browser memory limits" style="color: var(--accent-yellow, #f5c542); cursor: help;">⚠ Will downscale to ${WEB_MAX_WIDTH}p</span>`
+      : '';
+
+    videoMeta.innerHTML = `<strong>${file.name}</strong><br/>${sizeMB} MB &nbsp;•&nbsp; ${v.videoWidth}x${v.videoHeight} &nbsp;•&nbsp; ${formatDuration(videoDuration)}${downscaleNote}`;
     
     trimStart.max = videoDuration.toFixed(1);
     trimEnd.max = videoDuration.toFixed(1);
@@ -214,13 +232,30 @@ async function loadFFmpeg() {
     progressMeta.innerText = "Loading FFmpeg Engine (~25MB)...";
     ffmpeg = new FFmpeg();
     ffmpeg.on('log', ({ message }) => console.log('[ffmpeg log]', message));
-    
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-    await ffmpeg.load({
+
+    // [OOM-FIX] Use the multi-threaded core (core-mt) which leverages SharedArrayBuffer
+    // for a much larger WASM heap. Requires COOP/COEP headers (set in vercel.json).
+    // Falls back gracefully if SharedArrayBuffer is unavailable.
+    const useMT = typeof SharedArrayBuffer !== 'undefined';
+    const corePackage = useMT ? '@ffmpeg/core-mt@0.12.6' : '@ffmpeg/core@0.12.6';
+    const baseURL = `https://unpkg.com/${corePackage}/dist/esm`;
+
+    console.log(`[FFmpeg] Loading ${useMT ? 'multi-threaded (SharedArrayBuffer)' : 'single-threaded'} core.`);
+    progressMeta.innerText = useMT
+      ? "Loading FFmpeg Engine (multi-threaded)..."
+      : "Loading FFmpeg Engine (single-threaded, COOP headers missing)...";
+
+    const loadConfig = {
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
       wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      // Important to skip web worker inside service worker contexts for pure PWA robustness
-    });
+    };
+
+    // [OOM-FIX] The MT core needs its worker script too
+    if (useMT) {
+      loadConfig.workerURL = await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript');
+    }
+
+    await ffmpeg.load(loadConfig);
   }
 }
 
@@ -228,7 +263,7 @@ btnStart.addEventListener('click', async () => {
     if(!currentFile) return;
     
     if (!window.crossOriginIsolated) {
-        alert("Cross-Origin Isolation not detected. The browser might block FFmpeg. Try using localhost or enabling HTTPS.");
+        console.warn("[FFmpeg] CrossOriginIsolated is false — SharedArrayBuffer unavailable. Memory may be limited.");
     }
     
     isProcessing = true;
@@ -267,17 +302,29 @@ btnStart.addEventListener('click', async () => {
         });
         
         const outPattern = `thumb_%06d.${format}`;
+
+        // [OOM-FIX] Apply a downscale filter for videos wider than WEB_MAX_WIDTH (1920px).
+        // Uses `-2` for height to keep it divisible by 2 (required by most codecs).
+        // `iw` = input width — the `min()` ensures we never upscale smaller videos.
+        const needsDownscale = videoWidth > WEB_MAX_WIDTH;
+        const scaleFilter = needsDownscale ? [`-vf`, `scale='min(${WEB_MAX_WIDTH},iw)':-2`] : [];
+        if (needsDownscale) {
+          console.log(`[FFmpeg] Downscaling ${videoWidth}x${videoHeight} → max ${WEB_MAX_WIDTH}px wide to reduce memory usage.`);
+          progressMeta.innerText = `Processing video (downscaling ${videoWidth}px → ${WEB_MAX_WIDTH}px for memory)...`;
+        } else {
+          progressMeta.innerText = "Processing video geometry...";
+        }
         
         const cmd = [
             '-ss', String(start),
             '-t', String(durToProcess),
             '-i', inputName,
             '-r', String(fps),
+            ...scaleFilter,   // [OOM-FIX] Inject downscale filter only when needed
             ...qFlag,
             outPattern
         ];
         
-        progressMeta.innerText = "Processing video geometry...";
         console.log("EXEC", cmd);
         
         await ffmpeg.exec(cmd);
@@ -293,7 +340,7 @@ btnStart.addEventListener('click', async () => {
             const data = await ffmpeg.readFile(f.name);
             zip.file(f.name, data);
             
-            // Clean up emscripten memeory
+            // Clean up emscripten memory
             ffmpeg.deleteFile(f.name);
         }
         ffmpeg.deleteFile(inputName);
@@ -305,8 +352,11 @@ btnStart.addEventListener('click', async () => {
         isProcessing = false;
         progressWrap.hidden = true;
         resultCard.hidden = false;
-        
-        resultInfo.innerHTML = `<strong>Success!</strong><br/>Extracted ${outputFiles.length} frames into a downloadable ZIP.`;
+
+        const downscaleNote = needsDownscale
+          ? ` Frames were downscaled to ${WEB_MAX_WIDTH}px wide.`
+          : '';
+        resultInfo.innerHTML = `<strong>Success!</strong><br/>Extracted ${outputFiles.length} frames into a downloadable ZIP.${downscaleNote}`;
         
         // Assign the download functionality to the result button
         btnReveal.href = zipUrl;
@@ -321,7 +371,28 @@ btnStart.addEventListener('click', async () => {
         btnStart.disabled = false;
         btnClearVideo.disabled = false;
         progressWrap.hidden = true;
-        alert("Extraction failed. Out of memory? Check console for details.");
+
+        // [OOM-FIX] Detect OOM/memory errors and surface actionable guidance to the user
+        const errMsg = (err?.message || err?.toString() || '').toLowerCase();
+        const isOOM = errMsg.includes('out of memory') ||
+                      errMsg.includes('oom') ||
+                      errMsg.includes('memory') ||
+                      errMsg.includes('allocation failed') ||
+                      errMsg.includes('cannot enlarge');
+
+        if (isOOM) {
+          alert(
+            "❌ Extraction failed: browser ran out of memory.\n\n" +
+            "Try one or more of the following:\n" +
+            "  • Use the Trim fields to process a shorter clip\n" +
+            "  • Lower the FPS (e.g. 1 FPS)\n" +
+            "  • Switch to JPG format instead of PNG\n" +
+            "  • Close other browser tabs to free up RAM\n\n" +
+            "For very large or 4K+ videos, use the desktop app or FFmpeg CLI."
+          );
+        } else {
+          alert("Extraction failed. Check the browser console for details.");
+        }
     }
 });
 
