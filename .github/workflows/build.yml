@@ -1,14 +1,15 @@
-name: Build & Release Secure Apps
+name: Build & Release Desktop App
 
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags (e.g. v1.0.0)
-  workflow_dispatch: # Allow manual trigger
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -23,20 +24,30 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm install
-      
-    - name: Obfuscate Source Code
-      run: |
-        npx javascript-obfuscator ./src/main.js --output ./src/main.js --compact true --control-flow-flattening true --dead-code-injection true
-        npx javascript-obfuscator ./src/renderer.js --output ./src/renderer.js --compact true --control-flow-flattening true --dead-code-injection true
-        npx javascript-obfuscator ./src/preload.js --output ./src/preload.js --compact true --control-flow-flattening true --dead-code-injection true
-      # This overwrites the src files ONLY in the ephemeral CI runner right before packaging.
-      # Keeps local developer repositories completely safe and clean.
+      run: npm ci
 
-    - name: Build Electron App
-      run: npm run build:${{ matrix.os == 'macos-latest' && 'mac' || 'win' }}
+    - name: Obfuscate Source Code
+      continue-on-error: true
+      run: |
+        npx javascript-obfuscator ./src/main.js --output ./src/main.js --compact true --control-flow-flattening true
+        npx javascript-obfuscator ./src/renderer.js --output ./src/renderer.js --compact true --control-flow-flattening true
+        npx javascript-obfuscator ./src/preload.js --output ./src/preload.js --compact true --control-flow-flattening true
+
+    - name: Build Electron App (macOS)
+      if: matrix.os == 'macos-latest'
+      run: npx electron-builder --mac --publish never
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Electron App (Windows)
+      if: matrix.os == 'windows-latest'
+      run: npx electron-builder --win --publish never
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: List build output
+      run: ls -la dist/ || dir dist\
+      continue-on-error: true
 
     - name: Release to GitHub
       uses: softprops/action-gh-release@v2
@@ -44,6 +55,7 @@ jobs:
         files: |
           dist/*.dmg
           dist/*.exe
+          dist/*.zip
         draft: false
         prerelease: false
       env:

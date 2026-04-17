@@ -36,8 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const isMac = platform.includes('mac') || userAgent.includes('mac');
   const isWin = platform.includes('win') || userAgent.includes('win');
   // Direct download links — auto-built by GitHub Actions CI from electron-builder
-  const macUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.1/Frame-Extractor-1.0.0.dmg";
-  const winUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.1/Frame-Extractor-Setup-1.0.0.exe";
+  const macUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-mac.dmg";
+  const winUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-win.exe";
 
   const configOsBtn = (btn, isMacPlatform) => {
     if (!btn) return;

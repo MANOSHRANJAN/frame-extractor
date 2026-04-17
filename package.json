@@ -9,6 +9,7 @@
     "clean": "rm -rf dist",
     "copy-ffmpeg": "mkdir -p ffmpeg-bin && node -e \"const fs=require('fs'); const p=require('ffmpeg-static'); if(p && fs.existsSync(p)) { fs.copyFileSync(p, require('path').join('ffmpeg-bin', require('path').basename(p))); const e = p + '.exe'; if(fs.existsSync(e)) fs.copyFileSync(e, require('path').join('ffmpeg-bin', require('path').basename(e))); }\"",
     "web:dev": "http-server web -p 8080 -c-1",
+    "build": "echo 'Vercel static build placeholder'",
     "build:mac": "npm run copy-ffmpeg && npm run clean && electron-builder --mac",
     "build:win": "npm run copy-ffmpeg && electron-builder --win",
     "build:all": "npm run copy-ffmpeg && electron-builder --mac --win"
@@ -17,6 +18,7 @@
     "asar": true,
     "appId": "com.frameextractor.app",
     "productName": "Frame Extractor",
+    "artifactName": "Frame-Extractor-${os}.${ext}",
     "icon": "assets/icon",
     "extraResources": [
       {
@@ -29,17 +31,11 @@
     ],
     "mac": {
       "category": "public.app-category.video",
-      "target": [
-        "dmg",
-        "zip"
-      ],
+      "target": ["dmg"],
       "icon": "assets/icon.icns"
     },
     "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ],
+      "target": ["nsis"],
       "icon": "assets/icon.ico"
     },
     "nsis": {
