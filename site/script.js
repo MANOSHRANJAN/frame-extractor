@@ -35,18 +35,19 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const isMac = platform.includes('mac') || userAgent.includes('mac');
   const isWin = platform.includes('win') || userAgent.includes('win');
-  // Pointing all platforms to the .zip archive that was directly uploaded to GitHub Releases
-  const macLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
-  const winLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
+  // Direct download ZIP — same file works for both Mac and Windows
+  const downloadUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
 
   const configOsBtn = (btn, isMacPlatform) => {
     if (!btn) return;
     if (isMacPlatform) {
-      btn.href = macLink;
+      btn.href = downloadUrl;
+      btn.download = "Frame-Extractor-Desktop.zip";
       btn.innerHTML = `<span class="dl-icon">↓</span> Download for Mac`;
       btn.setAttribute('data-platform', 'mac');
     } else {
-      btn.href = winLink;
+      btn.href = downloadUrl;
+      btn.download = "Frame-Extractor-Desktop.zip";
       btn.innerHTML = `<span class="dl-icon">↓</span> Download for Windows`;
       btn.setAttribute('data-platform', 'windows');
     }
