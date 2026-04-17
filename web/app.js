@@ -48,32 +48,8 @@ const btnCancel = document.getElementById('btnCancel');
 const resultCard = document.getElementById('resultCard');
 const resultInfo = document.getElementById('resultInfo');
 const btnReveal = document.getElementById('btnReveal');
-const pwaInstallContainer = document.getElementById('pwaInstallContainer');
-
-// --- Register Service Worker ---
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(r => console.log('SW Registered', r.scope))
-      .catch(err => console.error('SW Error', err));
-  });
-}
-
-// --- PWA Installation Logic ---
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  pwaInstallContainer.hidden = false;
-});
-document.getElementById('btnInstallPwa').addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') pwaInstallContainer.hidden = true;
-    deferredPrompt = null;
-  }
-});
+// NOTE: coi-serviceworker.js (loaded in HTML) handles SharedArrayBuffer headers.
+// No PWA install prompt — users use the web page directly.
 
 // --- UI EVENT LISTENERS ---
 
