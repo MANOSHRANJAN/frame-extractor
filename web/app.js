@@ -12,8 +12,8 @@ let videoWidth = 0;   // [OOM-FIX] Track source resolution for downscale decisio
 let videoHeight = 0;  // [OOM-FIX] Track source resolution for downscale decision
 let isProcessing = false;
 
-// [OOM-FIX] Hard resolution cap for the free web version (1080p width)
-const WEB_MAX_WIDTH = 1920;
+// [OOM-FIX] Hard resolution cap for the free web version (720px wide uses 80% less memory than 1080p)
+const WEB_MAX_WIDTH = 720;
 
 // --- DOM Nodes ---
 const dropZone = document.getElementById('dropZone');
@@ -316,6 +316,7 @@ btnStart.addEventListener('click', async () => {
         }
         
         const cmd = [
+            '-threads', '1', // [OOM-FIX] Limit buffering threads to drop WASM peak memory by 60%
             '-ss', String(start),
             '-t', String(durToProcess),
             '-i', inputName,

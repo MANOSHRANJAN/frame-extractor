@@ -35,9 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const isMac = platform.includes('mac') || userAgent.includes('mac');
   const isWin = platform.includes('win') || userAgent.includes('win');
-
-  const macLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-macOS.dmg";
-  const winLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-Windows.exe";
+  // Pointing all platforms to the .zip archive that was directly uploaded to GitHub Releases
+  const macLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
+  const winLink = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
 
   const configOsBtn = (btn, isMacPlatform) => {
     if (!btn) return;
