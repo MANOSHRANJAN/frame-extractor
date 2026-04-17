@@ -7,10 +7,11 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "clean": "rm -rf dist",
+    "copy-ffmpeg": "mkdir -p ffmpeg-bin && node -e \"const fs=require('fs'); const p=require('ffmpeg-static'); if(p && fs.existsSync(p)) { fs.copyFileSync(p, require('path').join('ffmpeg-bin', require('path').basename(p))); const e = p + '.exe'; if(fs.existsSync(e)) fs.copyFileSync(e, require('path').join('ffmpeg-bin', require('path').basename(e))); }\"",
     "web:dev": "http-server web -p 8080 -c-1",
-    "build:mac": "npm run clean && electron-builder --mac",
-    "build:win": "electron-builder --win",
-    "build:all": "electron-builder --mac --win"
+    "build:mac": "npm run copy-ffmpeg && npm run clean && electron-builder --mac",
+    "build:win": "npm run copy-ffmpeg && electron-builder --win",
+    "build:all": "npm run copy-ffmpeg && electron-builder --mac --win"
   },
   "build": {
     "asar": true,
@@ -60,6 +61,6 @@
     "http-server": "^14.1.1",
     "javascript-obfuscator": "^5.4.1"
   },
-  "author": "Your Name",
+  "author": "Manosh Ranjan",
   "license": "MIT"
 }

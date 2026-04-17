@@ -25,8 +25,11 @@ jobs:
     - name: Install dependencies
       run: npm install
       
-    - name: Secure Codebase (Obfuscation)
-      run: npx javascript-obfuscator ./src --output ./src --compact true --control-flow-flattening true --dead-code-injection true
+    - name: Obfuscate Source Code
+      run: |
+        npx javascript-obfuscator ./src/main.js --output ./src/main.js --compact true --control-flow-flattening true --dead-code-injection true
+        npx javascript-obfuscator ./src/renderer.js --output ./src/renderer.js --compact true --control-flow-flattening true --dead-code-injection true
+        npx javascript-obfuscator ./src/preload.js --output ./src/preload.js --compact true --control-flow-flattening true --dead-code-injection true
       # This overwrites the src files ONLY in the ephemeral CI runner right before packaging.
       # Keeps local developer repositories completely safe and clean.
 
