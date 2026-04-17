@@ -1,0 +1,65 @@
+{
+  "name": "frame-extractor",
+  "version": "1.0.0",
+  "description": "Extract video frames at any FPS using FFmpeg",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "clean": "rm -rf dist",
+    "web:dev": "http-server web -p 8080 -c-1",
+    "build:mac": "npm run clean && electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win"
+  },
+  "build": {
+    "asar": true,
+    "appId": "com.frameextractor.app",
+    "productName": "Frame Extractor",
+    "icon": "assets/icon",
+    "extraResources": [
+      {
+        "from": "ffmpeg-bin/",
+        "to": "ffmpeg-bin/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "bytenode": "^1.5.7",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "http-server": "^14.1.1",
+    "javascript-obfuscator": "^5.4.1"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

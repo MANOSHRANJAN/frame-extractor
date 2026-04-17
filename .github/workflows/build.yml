@@ -1,0 +1,47 @@
+name: Build & Release Secure Apps
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags (e.g. v1.0.0)
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Secure Codebase (Obfuscation)
+      run: npx javascript-obfuscator ./src --output ./src --compact true --control-flow-flattening true --dead-code-injection true
+      # This overwrites the src files ONLY in the ephemeral CI runner right before packaging.
+      # Keeps local developer repositories completely safe and clean.
+
+    - name: Build Electron App
+      run: npm run build:${{ matrix.os == 'macos-latest' && 'mac' || 'win' }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Release to GitHub
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/*.dmg
+          dist/*.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

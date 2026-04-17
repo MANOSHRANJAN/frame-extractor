@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frame Extractor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-chrome">
+
+    <!-- ── Title bar drag region ── -->
+    <div class="titlebar" id="titlebar">
+      <span class="titlebar-title">⬡ FRAME EXTRACTOR</span>
+    </div>
+
+    <!-- ── Main layout ── -->
+    <div class="layout">
+
+      <!-- LEFT: Drop / Pick panel -->
+      <aside class="panel panel-left">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">▶</div>
+          <p class="drop-hint">Drop video here<br /><span>or</span></p>
+          <button class="btn btn-ghost" id="btnPickVideo">Browse File</button>
+        </div>
+
+        <!-- Video info card (hidden until file is loaded) -->
+        <div class="video-card" id="videoCard" hidden>
+          <div class="video-thumb" id="videoThumb"></div>
+          <div class="video-meta" id="videoMeta"></div>
+          <button class="btn btn-danger-ghost" id="btnClearVideo">✕ Remove</button>
+        </div>
+      </aside>
+
+      <!-- RIGHT: Settings + output panel -->
+      <main class="panel panel-right">
+
+        <!-- ── Section: FPS ── -->
+        <section class="settings-section">
+          <h2 class="section-title">TARGET FPS</h2>
+          <div class="fps-presets" id="fpsPresets">
+            <button class="fps-btn" data-fps="1">1</button>
+            <button class="fps-btn" data-fps="12">12</button>
+            <button class="fps-btn" data-fps="24">24</button>
+            <button class="fps-btn" data-fps="30">30</button>
+            <button class="fps-btn" data-fps="60">60</button>
+            <button class="fps-btn active" data-fps="120">120</button>
+            <button class="fps-btn" data-fps="200">200</button>
+            <button class="fps-btn" data-fps="custom">Custom</button>
+          </div>
+          <div class="custom-fps-row" id="customFpsRow" hidden>
+            <input class="input-num" id="customFpsInput" type="number"
+                   min="0.1" max="1000" step="0.1" placeholder="e.g. 48" />
+            <span class="unit-label">fps</span>
+          </div>
+        </section>
+
+        <!-- ── Section: Output format ── -->
+        <section class="settings-section">
+          <h2 class="section-title">FORMAT &amp; QUALITY</h2>
+          <div class="row-flex">
+            <div class="radio-group" id="fmtGroup">
+              <label class="radio-opt"><input type="radio" name="fmt" value="png" checked /> PNG</label>
+              <label class="radio-opt"><input type="radio" name="fmt" value="jpg" /> JPG</label>
+              <label class="radio-opt"><input type="radio" name="fmt" value="webp" /> WebP</label>
+            </div>
+          </div>
+          <div class="quality-row">
+            <span class="unit-label">Quality</span>
+            <input type="range" id="qualitySlider" min="1" max="9" value="2" />
+            <span class="quality-val" id="qualityVal">High</span>
+          </div>
+        </section>
+
+        <!-- ── Section: Scale ── -->
+        <section class="settings-section">
+          <h2 class="section-title">RESIZE (optional)</h2>
+          <div class="row-flex gap-sm">
+            <select class="select-input" id="scalePreset">
+              <option value="">Original size</option>
+              <option value="3840:2160">4K  — 3840×2160</option>
+              <option value="2560:1440">2K  — 2560×1440</option>
+              <option value="1920:1080">FHD — 1920×1080</option>
+              <option value="1280:720">HD  — 1280×720</option>
+              <option value="854:480">480p — 854×480</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </div>
+          <div class="custom-scale-row" id="customScaleRow" hidden>
+            <input class="input-num" id="scaleW" type="number" placeholder="Width" min="1" />
+            <span class="unit-label">×</span>
+            <input class="input-num" id="scaleH" type="number" placeholder="Height" min="1" />
+          </div>
+        </section>
+
+        <!-- ── Section: Trim ── -->
+        <section class="settings-section">
+          <h2 class="section-title">TRIM (seconds, optional)</h2>
+          <div class="row-flex gap-sm">
+            <input class="input-num" id="trimStart" type="number" placeholder="Start" min="0" step="0.1" />
+            <span class="unit-label">→</span>
+            <input class="input-num" id="trimEnd"   type="number" placeholder="End"   min="0" step="0.1" />
+          </div>
+        </section>
+
+        <!-- ── Section: Output folder ── -->
+        <section class="settings-section">
+          <h2 class="section-title">OUTPUT FOLDER</h2>
+          <div class="row-flex">
+            <div class="folder-display" id="folderDisplay">No folder selected</div>
+            <button class="btn btn-ghost btn-sm" id="btnPickFolder">Browse</button>
+          </div>
+        </section>
+
+        <!-- ── Estimated frames ── -->
+        <div class="estimate-bar" id="estimateBar" hidden>
+          <span id="estimateText">— frames estimated</span>
+        </div>
+
+        <!-- ── Action button ── -->
+        <div class="action-row">
+          <button class="btn btn-primary" id="btnStart" disabled>
+            <span class="btn-label">Extract Frames</span>
+          </button>
+        </div>
+
+        <!-- ── Progress ── -->
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-meta" id="progressMeta">Preparing…</div>
+          <button class="btn btn-danger-ghost btn-sm" id="btnCancel">Cancel</button>
+        </div>
+
+        <!-- ── Result card ── -->
+        <div class="result-card" id="resultCard" hidden>
+          <div class="result-icon">✓</div>
+          <div class="result-info" id="resultInfo"></div>
+          <button class="btn btn-ghost" id="btnReveal">Open Folder ↗</button>
+        </div>
+
+      </main>
+    </div><!-- /layout -->
+
+  </div><!-- /app-chrome -->
+
+  <script src="renderer.js"></script>
+</body>
+</html>

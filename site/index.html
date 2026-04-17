@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frame Extractor — Unlimited Video Output</title>
+  
+  <meta name="description" content="A powerful desktop and web utility to perfectly extract high-quality video frames at any FPS. 4K, 120FPS, full offline support.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="logo">⬡ Frame Extractor</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#compare">Pricing</a>
+        <a href="../web/index.html" class="nav-btn-ghost">Web Demo</a>
+        <a href="#download" class="nav-btn" id="navDlBtn">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="hero-content fade-up">
+      <div class="badge">Version 1.0 Available Now</div>
+      <h1 class="hero-title">Every Frame.<br>Perfectly Captured.</h1>
+      <p class="hero-subtitle">The fastest, fully native desktop engine to rip high-resolution 4K frames at 120 FPS. Designed for creators, AI researchers, and VFX artists.</p>
+      
+      <div class="hero-actions">
+        <button id="heroDlBtn" class="btn btn-primary btn-large">
+          <span class="dl-icon">↓</span> Download for Mac
+        </button>
+        <p class="os-hint" id="osHint">Also available for Windows</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Product Showcase Mockup -->
+  <section class="showcase fade-up">
+    <div class="app-mockup">
+      <div class="mockup-header">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+      </div>
+      <div class="mockup-body">
+        <img src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=2000&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; opacity: 0.5;" alt="App Screenshot Placeholder">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="feature-grid">
+      <div class="feature-card fade-up">
+        <h3>Unlimited 4K Support</h3>
+        <p>Your hardware is the only limit. Process massive 4K/8K video files locally without size restrictions or lag.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <h3>120 FPS Sub-Sampling</h3>
+        <p>Need deep slow-motion extracts? Go beyond standard frame rates. Extract up to 120 unique frames per second.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <h3>100% Offline & Private</h3>
+        <p>No video is ever uploaded to a server. Processing runs securely on your local CPU via ultra-fast FFmpeg decoding.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <h3>Zero Subscriptions</h3>
+        <p>Download the standalone desktop application once. Keep it forever. No cloud fees.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section id="compare" class="comparison fade-up">
+    <h2 class="section-title text-center">Find your Perfect Fit</h2>
+    <div class="pricing-cards">
+      
+      <!-- Free Web Tier -->
+      <div class="price-card">
+        <div class="card-head">
+          <h3>Web Explorer</h3>
+          <div class="price">Free</div>
+          <p>Perfect for quick 1080p extractions without committing to a download.</p>
+        </div>
+        <ul class="features-list">
+          <li>✓ Runs in Chrome/Safari</li>
+          <li>✓ No Server Uploads</li>
+          <li>✓ Output as .ZIP</li>
+          <li>✕ Capped at 30 FPS</li>
+          <li>✕ 1080p Resolution Limit</li>
+        </ul>
+        <a href="../web/index.html" class="btn btn-ghost w-100">Launch Web App</a>
+      </div>
+
+      <!-- Pro Desktop Tier -->
+      <div class="price-card pro">
+        <div class="card-glow"></div>
+        <div class="card-head">
+          <div class="badge-pro">Most Popular</div>
+          <h3>Pro Desktop</h3>
+          <div class="price">Download</div>
+          <p>Unleash your CPU. The ultimate extraction tool for power users.</p>
+        </div>
+        <ul class="features-list">
+          <li>✓ Native Mac/Windows App</li>
+          <li>✓ 100% Offline Capable</li>
+          <li>✓ Custom Folders Output</li>
+          <li>✓ Unlimited 120+ FPS</li>
+          <li>✓ Master 4K/8K Resolution</li>
+        </ul>
+        <a href="#download" class="btn btn-primary w-100" id="tableDlBtn">Download Free</a>
+      </div>
+      
+    </div>
+  </section>
+
+  <!-- Footer / Download -->
+  <section id="download" class="dl-footer fade-up">
+    <h2 class="section-title">Ready?</h2>
+    <div class="dl-buttons">
+      <a href="https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-macOS.dmg" class="btn btn-large" data-platform="mac">Download macOS (.dmg)</a>
+      <a href="https://github.com/MANOSHRANJAN/frame-extractor/releases/latest/download/Frame-Extractor-Windows.exe" class="btn btn-large" data-platform="windows">Download Windows (.exe)</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <p>&copy; 2026 Frame Extractor. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="https://github.com/MANOSHRANJAN">Contact Support</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

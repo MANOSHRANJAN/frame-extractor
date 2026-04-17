@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- COI Service Worker for SharedArrayBuffer Support -->
+  <script src="./coi-serviceworker.js"></script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  
+  <title>Frame Extractor Web</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-chrome">
+
+    <!-- ── Title bar drag region ── -->
+    <div class="titlebar" id="titlebar">
+      <span class="titlebar-title">⬡ FRAME EXTRACTOR PWA</span>
+    </div>
+
+    <!-- ── Main layout ── -->
+    <div class="layout">
+
+      <!-- LEFT: Drop / Pick panel -->
+      <aside class="panel panel-left">
+        <label for="videoInput" class="drop-zone" id="dropZone">
+          <div class="drop-icon">▶</div>
+          <p class="drop-hint">Tap to upload video<br /><span>or drag & drop</span></p>
+        </label>
+        <input type="file" id="videoInput" accept="video/*" style="display:none;" />
+
+        <!-- Video info card (hidden until file is loaded) -->
+        <div class="video-card" id="videoCard" hidden>
+          <div class="video-thumb" id="videoThumb"></div>
+          <div class="video-meta" id="videoMeta"></div>
+          <button class="btn btn-danger-ghost" id="btnClearVideo">✕ Remove</button>
+        </div>
+      </aside>
+
+      <!-- RIGHT: Settings + output panel -->
+      <main class="panel panel-right">
+
+        <!-- ── Section: FPS ── -->
+        <section class="settings-section">
+          <h2 class="section-title">TARGET FPS</h2>
+          <div class="fps-presets" id="fpsPresets">
+            <button class="fps-btn" data-fps="1">1</button>
+            <button class="fps-btn" data-fps="12">12</button>
+            <button class="fps-btn" data-fps="24">24</button>
+            <button class="fps-btn active" data-fps="30">30</button>
+            <button class="fps-btn" data-fps="60" disabled style="opacity:0.5; cursor:not-allowed;" title="Desktop Pro Feature">60 🔒</button>
+            <button class="fps-btn" data-fps="120" disabled style="opacity:0.5; cursor:not-allowed;" title="Desktop Pro Feature">120 🔒</button>
+          </div>
+          <!-- Upsell Banner -->
+          <div style="margin-top: 12px; font-size: 0.8rem; color: var(--accent); white-space: nowrap;">
+            <a href="../site/index.html#compare" style="text-decoration: underline;">Need 120 FPS or 4K? Download the free Desktop App ↗</a>
+          </div>
+          <div class="custom-fps-row" id="customFpsRow" hidden>
+            <input class="input-num" id="customFpsInput" type="number" min="0.1" max="1000" step="0.1" placeholder="e.g. 48" />
+            <span class="unit-label">fps</span>
+          </div>
+        </section>
+
+        <!-- ── Section: Output format ── -->
+        <section class="settings-section">
+          <h2 class="section-title">FORMAT &amp; QUALITY</h2>
+          <div class="row-flex">
+            <div class="radio-group" id="fmtGroup">
+              <label class="radio-opt"><input type="radio" name="fmt" value="png" checked /> PNG</label>
+              <label class="radio-opt"><input type="radio" name="fmt" value="jpg" /> JPG</label>
+            </div>
+          </div>
+          <div class="quality-row">
+            <span class="unit-label">Quality</span>
+            <input type="range" id="qualitySlider" min="1" max="9" value="2" />
+            <span class="quality-val" id="qualityVal">High</span>
+          </div>
+        </section>
+
+        <!-- ── Section: Trim ── -->
+        <section class="settings-section">
+          <h2 class="section-title">TRIM (seconds, optional)</h2>
+          <div class="row-flex gap-sm">
+            <input class="input-num" id="trimStart" type="number" placeholder="Start" min="0" step="0.1" />
+            <span class="unit-label">→</span>
+            <input class="input-num" id="trimEnd" type="number" placeholder="End" min="0" step="0.1" />
+          </div>
+        </section>
+
+        <!-- ── Section: Output Output ── -->
+        <section class="settings-section">
+          <h2 class="section-title">OUTPUT</h2>
+          <div class="row-flex">
+            <div class="folder-display">Files will be packaged into a .ZIP Archive</div>
+          </div>
+        </section>
+        
+        <!-- PWA Install Nudge -->
+        <div class="settings-section" id="pwaInstallContainer" hidden>
+            <div class="row-flex">
+                 <button class="btn btn-ghost" id="btnInstallPwa" style="width:100%; border-color:var(--accent); color:var(--accent);">
+                    ⬇ Install Web App to Home Screen
+                 </button>
+            </div>
+        </div>
+
+        <!-- ── Estimated frames ── -->
+        <div class="estimate-bar" id="estimateBar" hidden>
+          <span id="estimateText">— frames estimated</span>
+        </div>
+
+        <!-- ── Action button ── -->
+        <div class="action-row">
+          <button class="btn btn-primary" id="btnStart" disabled>
+            <span class="btn-label" id="btnLabel">Extract Frames (WASM)</span>
+          </button>
+        </div>
+
+        <!-- ── Progress ── -->
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-meta" id="progressMeta">Loading FFmpeg WebAssembly (~25MB)...</div>
+          <button class="btn btn-danger-ghost btn-sm" id="btnCancel">Cancel Engine</button>
+        </div>
+
+        <!-- ── Result card ── -->
+        <div class="result-card" id="resultCard" hidden>
+          <div class="result-icon">✓</div>
+          <div class="result-info" id="resultInfo"></div>
+          <a class="btn btn-ghost" id="btnReveal" href="#" style="text-decoration:none; display:flex; align-items:center;">Download ZIP 🗂️</a>
+        </div>
+
+      </main>
+    </div>
+  </div>
+  
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
