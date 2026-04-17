@@ -35,20 +35,19 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const isMac = platform.includes('mac') || userAgent.includes('mac');
   const isWin = platform.includes('win') || userAgent.includes('win');
-  // Direct download ZIP — same file works for both Mac and Windows
-  const downloadUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.0/frame-extractor-desktop.zip";
+  // Direct download links — auto-built by GitHub Actions CI from electron-builder
+  const macUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.1/Frame-Extractor-1.0.0.dmg";
+  const winUrl = "https://github.com/MANOSHRANJAN/frame-extractor/releases/download/v1.0.1/Frame-Extractor-Setup-1.0.0.exe";
 
   const configOsBtn = (btn, isMacPlatform) => {
     if (!btn) return;
     if (isMacPlatform) {
-      btn.href = downloadUrl;
-      btn.download = "Frame-Extractor-Desktop.zip";
-      btn.innerHTML = `<span class="dl-icon">↓</span> Download for Mac`;
+      btn.href = macUrl;
+      btn.innerHTML = `<span class="dl-icon">↓</span> Download for Mac (.dmg)`;
       btn.setAttribute('data-platform', 'mac');
     } else {
-      btn.href = downloadUrl;
-      btn.download = "Frame-Extractor-Desktop.zip";
-      btn.innerHTML = `<span class="dl-icon">↓</span> Download for Windows`;
+      btn.href = winUrl;
+      btn.innerHTML = `<span class="dl-icon">↓</span> Download for Windows (.exe)`;
       btn.setAttribute('data-platform', 'windows');
     }
   };
